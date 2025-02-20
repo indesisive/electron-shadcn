@@ -18,7 +18,14 @@ interface ElectronWindow {
   close: () => Promise<void>;
 }
 
+interface ElectronAPI {
+  getSources: (options: { types: string[] }) => Promise<Electron.DesktopCapturerSource[]>;
+  saveRecording: (vidChunks: Blob[]) => Promise<void>;
+  showSave: (options: any) => any;
+}
+
 declare interface Window {
   themeMode: ThemeModeContext;
   electronWindow: ElectronWindow;
+  electron: ElectronAPI;
 }

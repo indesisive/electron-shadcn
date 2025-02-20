@@ -1,20 +1,21 @@
-import { app, BrowserWindow } from "electron";
+const { app, BrowserWindow, ipcMain, desktopCapturer } = require("electron");
 import registerListeners from "./helpers/ipc/listeners-register";
-// "electron-squirrel-startup" seems broken when packaging with vite
-//import started from "electron-squirrel-startup";
 import path from "path";
 import {
   installExtension,
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
+import { dialog } from "electron";
 
 const inDevelopment = process.env.NODE_ENV === "development";
 
 function createWindow() {
   const preload = path.join(__dirname, "preload.js");
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1300,
+    height: 900,
+    minWidth: 1300,
+    minHeight: 900,
     webPreferences: {
       devTools: inDevelopment,
       contextIsolation: true,
@@ -45,9 +46,26 @@ async function installExtensions() {
   }
 }
 
-app.whenReady().then(createWindow).then(installExtensions);
+app.whenReady().then(() => {
+  ipcMain.handle("DESKTOP_CAPTURER_GET_SOURCES", (_: any, opts:any) => {
+    return desktopCapturer.getSources(opts);
+  });
 
-//osX only
+  ipcMain.handle("SHOW_SAVE_DIALOG", async (_:any, options:any) => {
+    return await dialog.showSaveDialog(options);
+  });
+
+  ipcMain.handle('show-save-dialog', async (_:any, options:any) => {
+    const result = await dialog.showSaveDialog({
+      filters: options.filters,
+      defaultPath: options.defaultPath
+    });
+    return result;
+  });
+
+  createWindow();
+}).then(installExtensions);
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
@@ -59,4 +77,3 @@ app.on("activate", () => {
     createWindow();
   }
 });
-//osX only ends
